@@ -1,8 +1,9 @@
 // app/menu/checkout/page.jsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 import Navbar from "@/app/components/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -28,12 +29,19 @@ const CheckoutPage = () => {
   const [customerName, setCustomerName] = useState("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // State untuk metode pembayaran
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("kasir"); // 'kasir' atau 'gateway'
+  const [showNameError, setShowNameError] = useState(false);
+  const nameInputRef = useRef(null);
 
   const handleOrder = async () => {
-    if (!customerName) return alert("Mohon isi nama Anda");
+    if (!customerName) {
+      setShowNameError(true);
+      nameInputRef.current?.focus();
+      toast.error("Mohon isi nama Anda untuk melanjutkan");
+      setTimeout(() => setShowNameError(false), 500); // Reset shake after animation
+      return;
+    }
 
     const paymentTypeEnum = paymentMethod === "kasir" ? "CASH" : "GATEWAY";
 
@@ -58,32 +66,37 @@ const CheckoutPage = () => {
 
       if (paymentMethod === "kasir") {
         clearCart();
-        window.location.href = `/menu/order-received?id=${orderData.id}`;
+        setIsRedirecting(true);
+        setTimeout(() => {
+          window.location.href = `/menu/order-received?id=${orderData.id}`;
+        }, 800);
       } else {
         // ALUR GATEWAY: Buka Midtrans Snap
         if (orderData?.snapToken) {
           window.snap.pay(orderData.snapToken, {
             onSuccess: (res) => {
               clearCart();
+              setIsRedirecting(true);
               window.location.href = `/menu/order-received?id=${orderData.id}`;
             },
             onPending: (res) => {
               clearCart();
+              setIsRedirecting(true);
               window.location.href = `/menu/order-received?id=${orderData.id}`;
             },
-            onError: () => alert("Pembayaran gagal, silakan coba lagi."),
+            onError: () => toast.error("Pembayaran gagal, silakan coba lagi."),
             onClose: () =>
-              alert(
-                "Pembayaran belum selesai. Silakan klik 'Bayar Sekarang' kembali.",
-              ),
+              toast("Pembayaran belum selesai. Segera selesaikan pembayaran Anda.", {
+                icon: "⚠️",
+              }),
           });
         } else {
-          alert("Gagal mendapatkan token pembayaran dari Midtrans.");
+          toast.error("Gagal mendapatkan token pembayaran dari Midtrans.");
         }
       }
     } catch (error) {
       console.error(error);
-      alert("Terjadi kesalahan koneksi");
+      toast.error("Terjadi kesalahan koneksi atau server.");
     } finally {
       setLoading(false);
     }
@@ -99,20 +112,51 @@ const CheckoutPage = () => {
 
       <Navbar />
 
-      <main className="max-w-2xl mx-auto px-4 pt-28">
+      <AnimatePresence>
+        {isRedirecting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] bg-white flex flex-col items-center justify-center"
+          >
+            <motion.div
+              animate={{
+                scale: [1, 1.1, 1],
+                rotate: [0, 5, -5, 0],
+              }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="relative w-24 h-24 mb-6"
+            >
+              <div className="absolute inset-0 bg-[#E9C46A]/20 rounded-full animate-ping" />
+              <div className="relative bg-white rounded-full p-4 shadow-xl border border-gray-100 flex items-center justify-center">
+                <ShoppingCart className="w-10 h-10 text-[#E9C46A]" />
+              </div>
+            </motion.div>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">
+              Pesanan Diterima!
+            </h2>
+            <p className="text-gray-400 font-medium animate-pulse">
+              Sedang menyiapkan struk digital Anda...
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <main className="max-w-2xl mx-auto px-4 pt-20 lg:pt-28 pb-10">
         {/* Header Section */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-3 lg:gap-4 mb-6 lg:mb-8">
           <Link
             href="/menu"
             className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-50 transition"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600" />
           </Link>
           <div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-xl lg:text-2xl font-black text-gray-900 tracking-tight">
               Checkout
             </h1>
-            <p className="text-sm text-gray-400 font-medium">
+            <p className="text-[10px] lg:text-sm text-gray-400 font-medium">
               Lengkapi detail pesanan Anda
             </p>
           </div>
@@ -140,28 +184,34 @@ const CheckoutPage = () => {
         ) : (
           <div className="space-y-4">
             {/* 1. Informasi Pemesan */}
-            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-blue-50 rounded-lg text-blue-500">
-                  <User size={18} />
+            <section className="bg-white p-5 lg:p-6 rounded-3xl shadow-sm border border-gray-100">
+              <div className="flex items-center gap-2 mb-5 lg:mb-6">
+                <div className="p-1.5 lg:p-2 bg-blue-50 rounded-lg text-blue-500">
+                  <User size={16} />
                 </div>
-                <h2 className="font-bold text-gray-800">Informasi Pemesan</h2>
+                <h2 className="text-sm lg:text-base font-bold text-gray-800">Informasi Pemesan</h2>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">
+                  <label className="block text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">
                     Nama Lengkap *
                   </label>
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Masukkan nama Anda"
-                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E9C46A] focus:bg-white rounded-2xl px-4 py-4 outline-none transition-all font-medium"
-                  />
+                  <motion.div
+                    animate={showNameError ? { x: [-4, 4, -4, 4, 0] } : {}}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Masukkan nama Anda"
+                      className={`w-full bg-gray-50 border-2 ${showNameError ? "border-red-400 bg-red-50/30" : "border-transparent"} focus:border-[#E9C46A] focus:bg-white rounded-2xl px-4 py-3 lg:py-4 outline-none transition-all font-medium text-sm lg:text-base`}
+                    />
+                  </motion.div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">
+                  <label className="block text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">
                     Catatan (Opsional)
                   </label>
                   <textarea
@@ -169,19 +219,19 @@ const CheckoutPage = () => {
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="Contoh: Tidak pedas, extra gula.."
                     rows={2}
-                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E9C46A] focus:bg-white rounded-2xl px-4 py-4 outline-none transition-all font-medium resize-none"
+                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E9C46A] focus:bg-white rounded-2xl px-4 py-3 lg:py-4 outline-none transition-all font-medium resize-none text-sm lg:text-base"
                   />
                 </div>
               </div>
             </section>
 
             {/* 2. Pilih Metode Pembayaran */}
-            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-yellow-50 rounded-lg text-[#E9C46A]">
-                  <CreditCard size={18} />
+            <section className="bg-white p-5 lg:p-6 rounded-3xl shadow-sm border border-gray-100">
+              <div className="flex items-center gap-2 mb-5 lg:mb-6">
+                <div className="p-1.5 lg:p-2 bg-yellow-50 rounded-lg text-[#E9C46A]">
+                  <CreditCard size={16} />
                 </div>
-                <h2 className="font-bold text-gray-800">Metode Pembayaran</h2>
+                <h2 className="text-sm lg:text-base font-bold text-gray-800">Metode Pembayaran</h2>
               </div>
 
               <div className="grid gap-3">
@@ -197,15 +247,15 @@ const CheckoutPage = () => {
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className={`p-3 rounded-xl ${paymentMethod === "kasir" ? "bg-[#E9C46A] text-white" : "bg-white text-gray-400"}`}
+                      className={`p-2.5 lg:p-3 rounded-xl ${paymentMethod === "kasir" ? "bg-[#E9C46A] text-white" : "bg-white text-gray-400"}`}
                     >
-                      <Store size={20} />
+                      <Store size={18} className="lg:w-5 lg:h-5" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-800 text-sm">
+                      <p className="font-bold text-gray-800 text-xs lg:text-sm">
                         Bayar di Kasir
                       </p>
-                      <p className="text-[10px] text-gray-500 font-medium">
+                      <p className="text-[9px] lg:text-[10px] text-gray-500 font-medium">
                         Tunai / QRIS Outlet
                       </p>
                     </div>
@@ -227,15 +277,15 @@ const CheckoutPage = () => {
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className={`p-3 rounded-xl ${paymentMethod === "gateway" ? "bg-[#E9C46A] text-white" : "bg-white text-gray-400"}`}
+                      className={`p-2.5 lg:p-3 rounded-xl ${paymentMethod === "gateway" ? "bg-[#E9C46A] text-white" : "bg-white text-gray-400"}`}
                     >
-                      <Wallet size={20} />
+                      <Wallet size={18} className="lg:w-5 lg:h-5" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-800 text-sm">
+                      <p className="font-bold text-gray-800 text-xs lg:text-sm">
                         Online Payment
                       </p>
-                      <p className="text-[10px] text-gray-500 font-medium">
+                      <p className="text-[9px] lg:text-[10px] text-gray-500 font-medium">
                         Transfer / E-Wallet / CC
                       </p>
                     </div>
@@ -266,8 +316,8 @@ const CheckoutPage = () => {
             </section>
 
             {/* 3. Ringkasan & Submit */}
-            <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-              <h2 className="font-bold text-gray-800 mb-6">
+            <section className="bg-white p-5 lg:p-6 rounded-3xl shadow-sm border border-gray-100">
+              <h2 className="text-sm lg:text-base font-bold text-gray-800 mb-5 lg:mb-6">
                 Ringkasan Pesanan
               </h2>
               <div className="space-y-4 mb-6">
@@ -303,7 +353,7 @@ const CheckoutPage = () => {
               <button
                 onClick={handleOrder}
                 disabled={loading}
-                className={`w-full mt-8 ${loading ? "bg-gray-400" : "bg-gray-900 hover:bg-black"} text-white rounded-2xl py-5 font-black text-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xl shadow-gray-200 cursor-pointer`}
+                className={`w-full mt-8 ${loading ? "bg-gray-400" : "bg-gray-900 hover:bg-black"} text-white rounded-2xl py-4 lg:py-5 font-bold lg:font-black text-base lg:text-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xl shadow-gray-200 cursor-pointer`}
               >
                 {loading
                   ? "Memproses..."

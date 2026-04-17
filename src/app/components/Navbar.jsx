@@ -37,7 +37,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2 z-60">
           <Image
             src="/logo.png"
-            alt="Mbah buyut house"
+            alt="Cafe house"
             width={40}
             height={40}
             className="h-10 w-auto"
@@ -46,7 +46,7 @@ export default function Navbar() {
             href="/"
             className="font-bold text-lg md:text-xl tracking-tighter"
           >
-            MBAH BUYUT HOUSE
+            CAFE HOUSE
           </Link>
         </div>
 

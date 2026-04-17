@@ -1,74 +1,119 @@
 // app/components/menu/MenuItem.jsx
+"use client";
 import Image from "next/image";
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import useCartStore from "@/app/store/useCartStore";
+
 const BASE_URL = "http://localhost:4001";
 
 const MenuItem = ({ data }) => {
-  const { addToCart } = useCartStore();
-  if (!data) return null;
+  const { addToCart, cart } = useCartStore();
+  const [justAdded, setJustAdded] = useState(false);
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ||
-    "http://localhost:4001";
+  if (!data) return null;
 
   const imageUrl =
     data.imageUrl && data.imageUrl.trim() !== ""
-      ? `${baseUrl}${data.imageUrl}`
+      ? `${BASE_URL}${data.imageUrl}`
       : null;
+
+  const cartItem = cart.find((item) => item.id === data.id);
+  const quantity = cartItem ? cartItem.quantity : 0;
+
+  const handleAdd = () => {
+    addToCart(data);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 600);
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group flex bg-white rounded-3xl p-3 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100/50 mb-4 items-center transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.2 }}
+      className="group relative bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100/80 hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-300"
     >
       {/* IMAGE */}
-      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="relative h-36 w-full overflow-hidden bg-gray-50">
         {imageUrl ? (
-          <>
-            <Image
-              src={`${BASE_URL}${data.imageUrl}`}
-              alt={data.name || "Menu item"}
-              className="w-full h-full object-cover"
-              width={100}
-              height={100}
-              priority
-              unoptimized
-            />
-            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </>
+          <Image
+            src={imageUrl}
+            alt={data.name || "Menu item"}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            fill
+            sizes="(max-width: 768px) 50vw, 33vw"
+            priority
+            unoptimized
+          />
         ) : (
-          <div className="flex flex-col items-center justify-center text-gray-400">
-            <span className="text-[10px] font-bold uppercase">No</span>
-            <span className="text-[10px] font-bold uppercase">Image</span>
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+            <span className="text-3xl">🍽️</span>
           </div>
         )}
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+        {/* Quantity badge */}
+        <AnimatePresence>
+          {quantity > 0 && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="absolute top-2.5 right-2.5 w-6 h-6 bg-gray-900 text-white text-[11px] font-black rounded-full flex items-center justify-center shadow-lg"
+            >
+              {quantity}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Konten Kanan */}
-      <div className="flex flex-col flex-1 ml-4 py-1">
-        <div className="mb-2">
-          <h3 className="font-extrabold text-gray-900 text-[17px] leading-snug tracking-tight group-hover:text-[#dfb550] transition-colors">
-            {data.name}
-          </h3>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-[13px] font-black text-gray-900 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
-              Rp{data.price.toLocaleString("id-ID")}
-            </span>
-          </div>
-        </div>
+      {/* CONTENT */}
+      <div className="p-3.5">
+        <h3 className="font-bold text-gray-900 text-sm leading-snug tracking-tight mb-0.5 truncate">
+          {data.name}
+        </h3>
+        <p className="text-[13px] font-black text-gray-700 mb-3">
+          Rp{data.price.toLocaleString("id-ID")}
+        </p>
 
-        <div className="mt-auto">
-          <button
-            onClick={() => addToCart(data)}
-            className="relative overflow-hidden px-5 py-2 bg-[#E9C46A] text-gray-900 font-black rounded-xl transition-all active:scale-90 hover:bg-[#dfb550] shadow-sm shadow-[#E9C46A]/20 flex items-center justify-center gap-2 text-xs uppercase tracking-widest"
-          >
-            Add
-            <span className="text-lg leading-none">+</span>
-          </button>
-        </div>
+        {/* ADD BUTTON */}
+        <motion.button
+          onClick={handleAdd}
+          whileTap={{ scale: 0.9 }}
+          className={`relative w-full overflow-hidden py-2.5 rounded-2xl font-bold text-xs tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 ${
+            justAdded
+              ? "bg-green-500 text-white"
+              : "bg-[#E9C46A] text-gray-900 hover:bg-[#dfb550]"
+          }`}
+        >
+          <AnimatePresence mode="wait">
+            {justAdded ? (
+              <motion.span
+                key="check"
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                className="flex items-center gap-1"
+              >
+                ✓ Ditambahkan
+              </motion.span>
+            ) : (
+              <motion.span
+                key="add"
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                className="flex items-center gap-1"
+              >
+                + Tambah
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
       </div>
     </motion.div>
   );

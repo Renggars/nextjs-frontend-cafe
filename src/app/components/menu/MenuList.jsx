@@ -1,26 +1,34 @@
+// app/components/menu/MenuList.jsx
 "use client";
 
+import { motion } from "framer-motion";
 import MenuItem from "./MenuItem";
 
 export default function MenuList({ menuData = [], addToCart }) {
   return (
-    <div className="space-y-12 pb-20">
-      {menuData.map((category) => (
-        <section
+    <div className="space-y-10 pb-32">
+      {menuData.map((category, catIndex) => (
+        <motion.section
           key={category.id}
           id={category.name.toLowerCase().replace(/\s+/g, "-")}
           className="scroll-mt-32"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: catIndex * 0.08 }}
         >
-          {/* Judul Kategori (Contoh: Food, Drink) */}
-          <div className="flex items-center gap-4 mb-6 px-2">
-            <h2 className="font-black text-2xl text-gray-900 capitalize">
+          {/* Category Header */}
+          <div className="flex items-center gap-3 mb-5 px-1">
+            <h2 className="font-black text-lg text-gray-900 capitalize tracking-tight whitespace-nowrap">
               {category.name}
             </h2>
-            <div className="h-0.5 flex-1 bg-gray-100 rounded-full"></div>
+            <div className="h-px flex-1 bg-gradient-to-r from-gray-200 to-transparent rounded-full" />
+            <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest shrink-0">
+              {category.menus?.length || 0} item
+            </span>
           </div>
 
-          {/* Grid Menu di dalam kategori tersebut */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {/* Menu Grid — 2 columns on mobile */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
             {category.menus && category.menus.length > 0 ? (
               category.menus.map((menu) => (
                 <MenuItem
@@ -30,12 +38,12 @@ export default function MenuList({ menuData = [], addToCart }) {
                 />
               ))
             ) : (
-              <p className="text-sm text-gray-400 px-2 italic">
+              <p className="col-span-2 text-sm text-gray-400 px-1 italic py-4">
                 Belum ada menu di kategori ini.
               </p>
             )}
           </div>
-        </section>
+        </motion.section>
       ))}
     </div>
   );

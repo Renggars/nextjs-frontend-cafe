@@ -47,28 +47,56 @@ const MenuPage = () => {
     <div className="min-h-screen bg-gray-50 font-sans">
       <Navbar />
 
-      <div className="flex flex-col lg:flex-row gap-6 mt-20 px-4 max-w-360 mx-auto items-start relative">
-        <aside className="hidden lg:block sticky top-24 w-65 shrink-0 h-[calc(100vh-7rem)] overflow-y-auto no-scrollbar">
+      {/* Mobile Layout */}
+      <div className="lg:hidden mt-10">
+        {/* Sticky Category Filter — menempel langsung di bawah navbar */}
+        <MobileFilters categories={categories} />
+
+        <div className="px-4 pt-4">
+          {/* Header Section */}
+          <div className="mb-5 pt-4">
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+              Our Menu
+            </h1>
+            <p className="text-sm text-gray-500 font-medium">
+              Authentic taste from Cafe House
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-2 gap-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="h-52 bg-gray-200 animate-pulse rounded-3xl"
+                />
+              ))}
+            </div>
+          ) : (
+            <MenuList menuData={categories} addToCart={addToCart} />
+          )}
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden lg:flex flex-row gap-6 mt-20 px-4 max-w-360 mx-auto items-start relative">
+        <aside className="sticky top-24 w-65 shrink-0 h-[calc(100vh-7rem)] overflow-y-auto no-scrollbar">
           <Filters categories={categories} />
         </aside>
 
         <main className="flex-1 h-[calc(100vh-7rem)] overflow-y-auto no-scrollbar relative">
-          <div className="lg:hidden mb-4">
-            <MobileFilters categories={categories} />
-          </div>
           {/* Header Section */}
           <div className="mb-6 px-2">
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">
               Our Menu
             </h1>
             <p className="text-gray-500 font-medium">
-              Authentic taste from Mbah Buyut House
+              Authentic taste from Cafe House
             </p>
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {/* Skeleton loading sederhana */}
+            <div className="grid grid-cols-3 gap-4">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
@@ -81,9 +109,9 @@ const MenuPage = () => {
           )}
         </main>
 
-        {/* 3. SIDEBAR CART (Fixed/Sticky) */}
-        <aside className="hidden lg:block sticky top-24 w-85 shrink-0 h-[calc(100vh-7rem)] flex-col">
-          <div className="bg-white rounded-4xl shadow-sm  h-full flex flex-col overflow-hidden">
+        {/* Sidebar Cart */}
+        <aside className="sticky top-24 w-85 shrink-0 h-[calc(100vh-7rem)] flex-col">
+          <div className="bg-white rounded-4xl shadow-sm h-full flex flex-col overflow-hidden">
             <CartMenu />
           </div>
         </aside>

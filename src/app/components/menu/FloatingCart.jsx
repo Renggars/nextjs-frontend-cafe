@@ -11,7 +11,7 @@ const FloatingCart = ({ cartCount, subtotal, onOpenCart }) => {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-6 left-0 right-0 px-4 z-50 lg:hidden"
+          className="fixed bottom-6 left-0 right-0 px-4 z-30 lg:hidden"
         >
           <div className="mx-auto max-w-md bg-white/90 backdrop-blur-xl border border-gray-200 shadow-[0_10px_40px_rgba(0,0,0,0.15)] rounded-2xl flex items-center justify-between p-2 h-16">
             <div className="flex items-center gap-3 pl-2">
